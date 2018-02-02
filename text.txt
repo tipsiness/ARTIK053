@@ -1,0 +1,42 @@
+ 24577 drwxr-xr-x   2 root root 4.0K  4월 11  2014 mnt
+ 57346 drwxr-xr-x  10 root root 4.0K  8월  4  2016 usr
+ 49153 drwxr-xr-x   2 root root 4.0K  8월  4  2016 srv
+ 24578 drwxr-xr-x   2 root root 4.0K  8월  4  2016 opt
+262147 drwxr-xr-x   2 root root 4.0K  8월  4  2016 media
+ 16386 drwxr-xr-x   2 root root 4.0K  8월  4  2016 lib64
+ 32770 drwx------   2 root root 4.0K  8월  4  2016 root
+ 65537 drwxr-xr-x  13 root root 4.0K  8월  4  2016 var
+    11 drwx------   2 root root  16K  1월 31 10:43 lost+found
+317697 drwxrwxr-x   2 root root 4.0K  1월 31 10:46 cdrom
+  8194 drwxr-xr-x   3 root root 4.0K  1월 31 10:46 home
+    12 lrwxrwxrwx   1 root root   29  1월 31 10:46 vmlinuz -> boot/vmlinuz-4.4.0-31-generic
+    13 lrwxrwxrwx   1 root root   32  1월 31 10:46 initrd.img -> boot/initrd.img-4.4.0-31-generic
+262148 drwxr-xr-x   2 root root 4.0K  1월 31 10:46 bin
+ 16385 drwxr-xr-x  23 root root 4.0K  1월 31 10:46 lib
+262149 drwxr-xr-x   3 root root 4.0K  1월 31 10:47 boot
+ 40962 drwxr-xr-x   2 root root  12K  1월 31 10:47 sbin
+     1 dr-xr-xr-x  13 root root    0  1월 31 10:50 sys
+     1 dr-xr-xr-x 189 root root    0  1월 31 10:50 proc
+262145 drwxr-xr-x 128 root root  12K  1월 31 10:51 etc
+     2 drwxr-xr-x  23 root root  760  1월 31 11:16 run
+ 57345 drwxrwxrwt   4 root root 4.0K  1월 31 17:20 tmp
+     2 drwxr-xr-x  17 root root 4.1K  1월 31 17:38 dev
+132247 drwxr-xr-x  10 root root 4.0K  8월  4  2016 local
+132244 drwxr-xr-x   2 root root 4.0K  8월  4  2016 games
+132250 drwxr-xr-x   4 root root 4.0K  8월  4  2016 src
+132245 drwxr-xr-x  34 root root 4.0K  1월 31 10:46 include
+132246 drwxr-xr-x 148 root root  20K  1월 31 10:46 lib
+132243 drwxr-xr-x   2 root root  40K  1월 31 10:46 bin
+132249 drwxr-xr-x 277 root root  12K  1월 31 10:46 share
+132248 drwxr-xr-x   2 root root  12K  1월 31 10:47 sbin
+147991 drwxr-xr-x 2 root root 4.0K  8월  4  2016 src
+147989 drwxr-xr-x 2 root root 4.0K  8월  4  2016 sbin
+147986 drwxr-xr-x 2 root root 4.0K  8월  4  2016 include
+147985 drwxr-xr-x 2 root root 4.0K  8월  4  2016 games
+147984 drwxr-xr-x 2 root root 4.0K  8월  4  2016 etc
+147983 drwxr-xr-x 2 root root 4.0K  8월  4  2016 bin
+147987 drwxr-xr-x 4 root root 4.0K  8월  4  2016 lib
+147990 drwxr-xr-x 7 root root 4.0K  8월  4  2016 share
+147988 lrwxrwxrwx 1 root root    9  1월 31 10:44 man -> share/man
+147993 drwxrwsr-x 3 root staff 4.0K  8월  4  2016 python3.4
+147992 drwxrwsr-x 4 root staff 4.0K  8월  4  2016 python2.7
