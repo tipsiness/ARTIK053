@@ -49,10 +49,10 @@ int main(int argc, FAR char *argv[]) {
     for (i = 0; i < 5; i++) {
       for (j = 0; j < 8; j++) {
         if (j < 7) {
-			data[i] |= get_value();
-			data[i] = data[i] << 1;
-				} else {
-			data[i] |= get_value();
+	  data[i] |= get_value();
+	  data[i] = data[i] << 1;
+	    } else {
+	  data[i] |= get_value();
         }
       }
     }
@@ -63,10 +63,10 @@ int main(int argc, FAR char *argv[]) {
       tmp += data[i];
     }
     if (data[4] == (tmp & 0xFF)) {
-      humi = data[0] + (float)(data[1]/100.0);
-      temp = data[2] + (float)(data[3]/100.0);
+      humi = data[0];
+      temp = data[2];
 
-      printf("Temperature: %.1f, Humidity: %.1f\n", temp, humi);
+      printf("Temperature: %d, Humidity: %d\n", temp, humi);
     } else {
       printf("Parity Error\n");
       printf("data[0]: %d, data[1]: %d, data[2]: %d, data[3]: %d, \
