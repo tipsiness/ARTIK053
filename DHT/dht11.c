@@ -20,7 +20,7 @@ uint32_t cfgcon_out, cfgcon_in;
 int main(int argc, FAR char *argv[]) {
   unsigned char data[5];
   int i, j, val;
-  float temp, humi;
+  unsigned int temp, humi;
   int tmp;
 
   printf("Temperature & Humidity (DHT11)\n");
