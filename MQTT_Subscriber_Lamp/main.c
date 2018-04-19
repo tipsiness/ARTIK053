@@ -11,11 +11,12 @@
 // for NTP
 #include <apps/netutils/ntpclient.h>
 
-// for parsing
+// for JSON
 #include <apps/netutils/cJSON.h>
 
 #define DEFAULT_CLIENT_ID "123456789"
 #define SERVER_ADDR "api.artik.cloud"
+//#define SERVER_ADDR "52.86.204.150"
 #define SERVER_PORT 8883
 //#define SERVER_PORT 1883 // non-secure mode, Not supported in ARTIK Cloud
 #define RED "RED"
@@ -27,44 +28,78 @@
 #define RED_ON_BOARD_LED 45
 #define NET_DEVNAME "wl1"
 
-//ARTIK Smart Parking LED - my LED
-// Fields: LED
-// Actions: setOn, setOff
-#define DEVICE_ID 		""
-#define DEVICE_TOKEN 	""
+char device_id[] = 		"YOUR DEVICE ID for Lamp";
+char device_token[] = 		"YOUR DEVICE TOKEN for Lamp";
 
-char device_id[] = 		"";
-char device_token[] = 	"";
+char *strTopicMsg;
+char *strTopicAct;
 
 static const char mqtt_ca_cert_str[] = \
 		"-----BEGIN CERTIFICATE-----\r\n"
-			"MIIE0zCCA7ugAwIBAgIQGNrRniZ96LtKIVjNzGs7SjANBgkqhkiG9w0BAQUFADCB\r\n"
-			"yjELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQL\r\n"
-			"ExZWZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJp\r\n"
-			"U2lnbiwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxW\r\n"
-			"ZXJpU2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0\r\n"
-			"aG9yaXR5IC0gRzUwHhcNMDYxMTA4MDAwMDAwWhcNMzYwNzE2MjM1OTU5WjCByjEL\r\n"
-			"MAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQLExZW\r\n"
-			"ZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJpU2ln\r\n"
-			"biwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxWZXJp\r\n"
-			"U2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0aG9y\r\n"
-			"aXR5IC0gRzUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvJAgIKXo1\r\n"
-			"nmAMqudLO07cfLw8RRy7K+D+KQL5VwijZIUVJ/XxrcgxiV0i6CqqpkKzj/i5Vbex\r\n"
-			"t0uz/o9+B1fs70PbZmIVYc9gDaTY3vjgw2IIPVQT60nKWVSFJuUrjxuf6/WhkcIz\r\n"
-			"SdhDY2pSS9KP6HBRTdGJaXvHcPaz3BJ023tdS1bTlr8Vd6Gw9KIl8q8ckmcY5fQG\r\n"
-			"BO+QueQA5N06tRn/Arr0PO7gi+s3i+z016zy9vA9r911kTMZHRxAy3QkGSGT2RT+\r\n"
-			"rCpSx4/VBEnkjWNHiDxpg8v+R70rfk/Fla4OndTRQ8Bnc+MUCH7lP59zuDMKz10/\r\n"
-			"NIeWiu5T6CUVAgMBAAGjgbIwga8wDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E\r\n"
-			"BAMCAQYwbQYIKwYBBQUHAQwEYTBfoV2gWzBZMFcwVRYJaW1hZ2UvZ2lmMCEwHzAH\r\n"
-			"BgUrDgMCGgQUj+XTGoasjY5rw8+AatRIGCx7GS4wJRYjaHR0cDovL2xvZ28udmVy\r\n"
-			"aXNpZ24uY29tL3ZzbG9nby5naWYwHQYDVR0OBBYEFH/TZafC3ey78DAJ80M5+gKv\r\n"
-			"MzEzMA0GCSqGSIb3DQEBBQUAA4IBAQCTJEowX2LP2BqYLz3q3JktvXf2pXkiOOzE\r\n"
-			"p6B4Eq1iDkVwZMXnl2YtmAl+X6/WzChl8gGqCBpH3vn5fJJaCGkgDdk+bW48DW7Y\r\n"
-			"5gaRQBi5+MHt39tBquCWIMnNZBU4gcmU7qKEKQsTb47bDN0lAtukixlE0kF6BWlK\r\n"
-			"WE9gyn6CagsCqiUXObXbf+eEZSqVir2G3l6BFoMtEMze/aiCKm0oHw0LxOXnGiYZ\r\n"
-			"4fQRbxC1lfznQgUy286dUV4otp6F01vvpX1FQHKOtw5rDgb7MzVIcbidJ4vEZV8N\r\n"
-			"hnacRHr2lVz2XTIIM6RUthg/aFzyQkqFOFSDX9HoLPKsEdao7WNq\r\n"
-			"-----END CERTIFICATE-----\r\n";
+		"MIIGrTCCBZWgAwIBAgIQASAP9e8Tbenonqd/EQFJaDANBgkqhkiG9w0BAQsFADBN\r\n"
+		"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMScwJQYDVQQDEx5E\r\n"
+		"aWdpQ2VydCBTSEEyIFNlY3VyZSBTZXJ2ZXIgQ0EwHhcNMTgwMzA4MDAwMDAwWhcN\r\n"
+		"MjAwNDA1MTIwMDAwWjBzMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5p\r\n"
+		"YTERMA8GA1UEBxMIU2FuIEpvc2UxJDAiBgNVBAoTG1NhbXN1bmcgU2VtaWNvbmR1\r\n"
+		"Y3RvciwgSW5jLjEWMBQGA1UEAwwNKi5hcnRpay5jbG91ZDCCASIwDQYJKoZIhvcN\r\n"
+		"AQEBBQADggEPADCCAQoCggEBANghNaTXWDfYV/JWgBnX4hmhcClPSO0onx5B2url\r\n"
+		"YzpvTc3MBaQ+08YBpAKvTqZvPqrJUIM45Q91M301I5e2kz0DMq2zQZOGB0B83V/O\r\n"
+		"O4vwETq4PCjAPhMinF4dN6HeJCuqo1CLh8evhfkFiJvpEfQWTxdjzPJ0Zdj/2U8E\r\n"
+		"8Ht7zV5pWiDtuejtIDHB5H6fCx4xeQy/E+5l4V6R3BnRKpZsJtlhTh0RFqWhw5DJ\r\n"
+		"/WWpGP//1VTZSHyW9SABsPd+jP1YgDraRD4b4lZBU6c8nC5qT3dhdiYoG6xUgTb3\r\n"
+		"kfgUhhlOFpe3sBtR32OS8RuFrFeQDGaa3r6pfSy06Kph/eECAwEAAaOCA2EwggNd\r\n"
+		"MB8GA1UdIwQYMBaAFA+AYRyCMWHVLyjnjUY4tCzhxtniMB0GA1UdDgQWBBSNBf6r\r\n"
+		"7S/j0oV3A0XmEflXErutQDAlBgNVHREEHjAcgg0qLmFydGlrLmNsb3VkggthcnRp\r\n"
+		"ay5jbG91ZDAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsG\r\n"
+		"AQUFBwMCMGsGA1UdHwRkMGIwL6AtoCuGKWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNv\r\n"
+		"bS9zc2NhLXNoYTItZzYuY3JsMC+gLaArhilodHRwOi8vY3JsNC5kaWdpY2VydC5j\r\n"
+		"b20vc3NjYS1zaGEyLWc2LmNybDBMBgNVHSAERTBDMDcGCWCGSAGG/WwBATAqMCgG\r\n"
+		"CCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2VydC5jb20vQ1BTMAgGBmeBDAEC\r\n"
+		"AjB8BggrBgEFBQcBAQRwMG4wJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2lj\r\n"
+		"ZXJ0LmNvbTBGBggrBgEFBQcwAoY6aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29t\r\n"
+		"L0RpZ2lDZXJ0U0hBMlNlY3VyZVNlcnZlckNBLmNydDAJBgNVHRMEAjAAMIIBfwYK\r\n"
+		"KwYBBAHWeQIEAgSCAW8EggFrAWkAdgCkuQmQtBhYFIe7E6LMZ3AKPDWYBPkb37jj\r\n"
+		"d80OyA3cEAAAAWIHFb1dAAAEAwBHMEUCIQCQ0UjVVJSQDRB3oxzI5aD1Hs5GhbXj\r\n"
+		"I6Cqt3/tkXT1WQIgNVWRgbJ72Ik9gp5QoNxhCZ+h//or0uL7PHnv3cP5L9UAdgBv\r\n"
+		"U3asMfAxGdiZAKRRFf93FRwR2QLBACkGjbIImjfZEwAAAWIHFb73AAAEAwBHMEUC\r\n"
+		"IQDxCxJCsZjuqbQvuwipgdUf1l6qXdiekM5zn33i1+KYxgIgKDMJEuKHzhkweT2S\r\n"
+		"Y4dWBuzSdOAzZfoDrIGdsFvkxi0AdwC72d+8H4pxtZOUI5eqkntHOFeVCqtS6BqQ\r\n"
+		"lmQ2jh7RhQAAAWIHFb1YAAAEAwBIMEYCIQCNDYdxWmqUGGwNzXlJ1/NXxzwqPYIB\r\n"
+		"eSJDuR1xfWtSsQIhAJsygf2rqPS+O7qQAzggCQ2V/3JDRUhuxNDPqwooo47uMA0G\r\n"
+		"CSqGSIb3DQEBCwUAA4IBAQBvRGWibvHFrRUWsArJ9lmS5MMZFbXXQPXbflgv3nSG\r\n"
+		"ShmhBC3o+k97J0Wgp/wH7uDf01RrRMAVNm458g1Mr4AMAXq3zzxNNTwjGYw/USuG\r\n"
+		"UprrKqc9onugtAUX8DGvlZr8SWO3FhPlyamWQ69jutx/X4nfHyZr41bX9WQ/ay0F\r\n"
+		"GQJ1tRTrX1eUPO+ucXeG8vTbt09bRNnoY+i97dzrwHakXySfHohNsIbwmrsS4SQv\r\n"
+		"7eG9g5+5vsc2B9ugGcELIYKrzDWNPshir37KSpcwLUCmDJkTQp8+KhJUKgbTALTa\r\n"
+		"nxuDyNwZIwW66vv1t0Zi4vKU8hfUsAN2N3wcsb6pY/RA\r\n"
+		"-----END CERTIFICATE-----\r\n"
+		"-----BEGIN CERTIFICATE-----\r\n"
+		"MIIElDCCA3ygAwIBAgIQAf2j627KdciIQ4tyS8+8kTANBgkqhkiG9w0BAQsFADBh\r\n"
+		"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\r\n"
+		"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD\r\n"
+		"QTAeFw0xMzAzMDgxMjAwMDBaFw0yMzAzMDgxMjAwMDBaME0xCzAJBgNVBAYTAlVT\r\n"
+		"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxJzAlBgNVBAMTHkRpZ2lDZXJ0IFNIQTIg\r\n"
+		"U2VjdXJlIFNlcnZlciBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\r\n"
+		"ANyuWJBNwcQwFZA1W248ghX1LFy949v/cUP6ZCWA1O4Yok3wZtAKc24RmDYXZK83\r\n"
+		"nf36QYSvx6+M/hpzTc8zl5CilodTgyu5pnVILR1WN3vaMTIa16yrBvSqXUu3R0bd\r\n"
+		"KpPDkC55gIDvEwRqFDu1m5K+wgdlTvza/P96rtxcflUxDOg5B6TXvi/TC2rSsd9f\r\n"
+		"/ld0Uzs1gN2ujkSYs58O09rg1/RrKatEp0tYhG2SS4HD2nOLEpdIkARFdRrdNzGX\r\n"
+		"kujNVA075ME/OV4uuPNcfhCOhkEAjUVmR7ChZc6gqikJTvOX6+guqw9ypzAO+sf0\r\n"
+		"/RR3w6RbKFfCs/mC/bdFWJsCAwEAAaOCAVowggFWMBIGA1UdEwEB/wQIMAYBAf8C\r\n"
+		"AQAwDgYDVR0PAQH/BAQDAgGGMDQGCCsGAQUFBwEBBCgwJjAkBggrBgEFBQcwAYYY\r\n"
+		"aHR0cDovL29jc3AuZGlnaWNlcnQuY29tMHsGA1UdHwR0MHIwN6A1oDOGMWh0dHA6\r\n"
+		"Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEdsb2JhbFJvb3RDQS5jcmwwN6A1\r\n"
+		"oDOGMWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEdsb2JhbFJvb3RD\r\n"
+		"QS5jcmwwPQYDVR0gBDYwNDAyBgRVHSAAMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8v\r\n"
+		"d3d3LmRpZ2ljZXJ0LmNvbS9DUFMwHQYDVR0OBBYEFA+AYRyCMWHVLyjnjUY4tCzh\r\n"
+		"xtniMB8GA1UdIwQYMBaAFAPeUDVW0Uy7ZvCj4hsbw5eyPdFVMA0GCSqGSIb3DQEB\r\n"
+		"CwUAA4IBAQAjPt9L0jFCpbZ+QlwaRMxp0Wi0XUvgBCFsS+JtzLHgl4+mUwnNqipl\r\n"
+		"5TlPHoOlblyYoiQm5vuh7ZPHLgLGTUq/sELfeNqzqPlt/yGFUzZgTHbO7Djc1lGA\r\n"
+		"8MXW5dRNJ2Srm8c+cftIl7gzbckTB+6WohsYFfZcTEDts8Ls/3HB40f/1LkAtDdC\r\n"
+		"2iDJ6m6K7hQGrn2iWZiIqBtvLfTyyRRfJs8sjX7tN8Cp1Tm5gr8ZDOo0rwAhaPit\r\n"
+		"c+LJMto4JQtV05od8GiG7S5BNO98pVAdvzr508EIDObtHopYJeS4d60tbvVS3bR0\r\n"
+		"j6tJLp07kzQoH3jOlOrHvdPJbRzeXDLz\r\n"
+		"-----END CERTIFICATE-----\r\n";
 
 // mqtt client handle
 mqtt_client_t* pClientHandle = NULL;
@@ -121,23 +156,27 @@ void gpio_write(int port, int value) {
 }
 
 // mqtt client on message callback
+// header: <apps/netutils/cJSON.h>
 void onMessage(void *client, mqtt_msg_t *msg) {
-    int i;
-    cJSON *jsonMsg = NULL;
-    char *strActName = NULL;
-    char *payload = strdup(msg->payload);
+	int i;
+	cJSON *jsonMsg = NULL;
+	char *strActName = NULL;
+	char *payload = strdup(msg->payload);
 
-    printf("Received message\n");
+	printf("Received message\n");
     printf("Topic: %s\n", msg->topic);
     printf("Message: %s\n", payload);
 
     jsonMsg = cJSON_Parse((const char*)payload);
-    cJSON *data = cJSON_GetObjectItem(jsonMsg, "actions"); // Object Array
+    cJSON *data = cJSON_GetObjectItem(jsonMsg, "actions");
 
     if (data == NULL) {
-       	printf("data is null\n");
-       	return;
+    	printf("data is null\n");
+    	return;
     }
+
+    //int dataLength = cJSON_GetArraySize(data);
+    //printf("array length: %d\n", dataLength);
 
     cJSON *action = cJSON_GetArrayItem(data, 0);
     cJSON *actName = cJSON_GetObjectItem(action, "name");
@@ -150,26 +189,31 @@ void onMessage(void *client, mqtt_msg_t *msg) {
     free(payload);
 
     if (strncmp(strActName, "\"setOn\"", 7) == 0) {
-    	printf("Turn On!\n");
+    	printf("Turn on lamp\n");
     	gpio_write(48, 0);
-    } else if(strncmp(strActName, "\"setOff\"", 8) == 0) {
-    	printf("Turn Off!\n");
-    	gpio_write(48, 1);
-    } else if(strncmp(strActName, "\"setHumidity\"", 13) == 0) {
-    	printf("setHumidity!\n");
-    	//gpio_write(48, 1);
-    } else if(strncmp(strActName, "\"setTemperature\"", 16) == 0) {
-    	printf("setTemperature!\n");
-    	//gpio_write(48, 1);
-    } else if(strncmp(strActName, "\"getHumidity\"", 13) == 0) {
-    	printf("getHumidity!\n");
-    	//gpio_write(48, 1);
-    } else if(strncmp(strActName, "\"getTemperature\"", 16) == 0) {
-    	printf("getTemperature!\n");
-    	//gpio_write(48, 1);
-    } else {
-    	printf("Unknown action\n");
 
+    	mqtt_msg_t message;
+    	message.payload = (char*)"{\"LED\":true}";
+    	message.payload_len = 12;
+    	message.topic = strTopicMsg;
+    	message.qos = 0;
+    	message.retain = 0;
+
+    	int ret = mqtt_publish(pClientHandle, message.topic, (char*)message.payload, message.payload_len, message.qos, message.retain);
+    } else if (strncmp(strActName, "\"setOff\"", 8) == 0) {
+    	printf("Turn off lamp\n");
+    	gpio_write(48, 1);
+
+    	mqtt_msg_t message;
+    	message.payload = (char*)"{\"LED\":false}";
+    	message.payload_len = 13;
+    	message.topic = strTopicMsg;
+    	message.qos = 0;
+    	message.retain = 0;
+
+    	int ret = mqtt_publish(pClientHandle, message.topic, (char*)message.payload, message.payload_len, message.qos, message.retain);
+    } else {
+    	printf("Unrecognized action.\n");
     }
 }
 
@@ -229,13 +273,10 @@ int main(int argc, FAR char *argv[])
     bool wifiConnected = false;
     gpio_write(RED_ON_BOARD_LED, 1); // Turn on on board Red LED to indicate no WiFi connection is established
 
-    char *strTopicMsg = (char*)malloc(sizeof(char)*256);
-    char *strTopicAct = (char*)malloc(sizeof(char)*256);
-    char *strTopicActHumiTemp = (char*)malloc(sizeof(char)*256);
-
-    sprintf(strTopicMsg, "/v1.1/messages/%s", DEVICE_ID);
-    sprintf(strTopicAct, "/v1.1/actions/%s", DEVICE_ID);
-    sprintf(strTopicActHumiTemp, "/v1.1/actions/d7aea65035ea432dae792061375b2f23");
+    strTopicMsg = (char*)malloc(sizeof(char)*256);
+    strTopicAct = (char*)malloc(sizeof(char)*256);
+    sprintf(strTopicMsg, "/v1.1/messages/%s", device_id);
+    sprintf(strTopicAct, "/v1.1/actions/%s", device_id);
 
     memset(&clientConfig, 0, sizeof(clientConfig));
     memset(&clientTls, 0, sizeof(clientTls));
@@ -325,35 +366,22 @@ int main(int argc, FAR char *argv[])
         sleep(2);
         // Connect mqtt client to server
         int result = mqtt_connect(pClientHandle, SERVER_ADDR, SERVER_PORT, 60);
-        if (result < 0) {
-            printf("mqtt client connect to server fail\n");
-            continue;
-        } else if (result == 0) {
-        	mqttConnected = true;
-        	printf("mqtt client connected to server\n");
-        	break;
+
+        if (result == 0) {
+             mqttConnected = true;
+             printf("mqtt client connected to server\n");
+             break;
+        } else {
+        	continue;
         }
     }
 
     bool mqttSubscribe = false;
 
-    // Subscribe to topic of interest
-    while (mqttSubscribe == false ) {
-        sleep(2);
-        int result = mqtt_subscribe(pClientHandle, strTopicAct, 0); //topic - color, QOS - 0
-        if (result < 0) {
-            printf("mqtt client subscribe to topic failed\n");
-            continue;
-        }
-        mqttSubscribe = true;
-        printf("mqtt client Subscribed to the topic successfully\n");
-    }
-
-    mqttSubscribe = false;
-    // Subscribe to topic of interest
+        // Subscribe to topic of interest
         while (mqttSubscribe == false ) {
             sleep(2);
-            int result = mqtt_subscribe(pClientHandle, strTopicActHumiTemp, 0); //topic - color, QOS - 0
+            int result = mqtt_subscribe(pClientHandle, strTopicAct, 0); //topic - color, QOS - 0
             if (result < 0) {
                 printf("mqtt client subscribe to topic failed\n");
                 continue;
@@ -366,5 +394,3 @@ int main(int argc, FAR char *argv[])
     	up_mdelay(100);
     }
 }
-
-
